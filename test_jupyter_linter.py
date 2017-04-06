@@ -167,6 +167,3 @@ class TestCleanExecution(object):
         }
         errors = jupyter_linter._check_clean_execution('file name.ipynb', notebook)
         assert(len(errors) == 0)
-
-
-
