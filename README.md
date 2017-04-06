@@ -17,4 +17,3 @@ Simply run `pytest` in the repo root folder.
 
 TODO: Improve README by adding motivation for the project and better usage instructions.
 TODO: Package for easy distribution via Pypy and add instructions of how to publish to Pypy.
-TODO: Run tests and linter on CircleCI.
