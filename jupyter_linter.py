@@ -74,8 +74,8 @@ def _check_import_in_first_code_cell(file_name, notebook):
         for line in coding_cell.get('source', []):
             if re.match('^import ', line) or re.match('^from .* import ', line):
                 msg = (
-                    'Imports should be only in first coding cell, but in '
-                    'file "%s", coding cell %d' % (file_name, i + 1))
+                    'Imports found in coding cell %d. '
+                    'Please move imports to first coding cell' % (i + 1))
                 errors.append(NotebookError(file_name, msg))
     return errors
 

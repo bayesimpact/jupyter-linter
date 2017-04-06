@@ -44,8 +44,7 @@ class TestFirstCellImport(object):
         errors = jupyter_linter._check_import_in_first_code_cell('file_name.ipynb', notebook)
         assert(len(errors) == 1)
         assert(errors[0].msg == (
-            'Imports should be only in first coding cell, but in file'
-            ' "file_name.ipynb", coding cell 1'))
+            'Imports found in coding cell 1. Please move imports to first coding cell'))
 
 
 class TestNotebookNotEmpty(object):
@@ -66,7 +65,7 @@ class TestNotebookNotEmpty(object):
         assert(len(errors) == 0)
 
 
-class TestAuthotInFirstCell(object):
+class TestAuthorInFirstCell(object):
     """Each notebook should start with a markdown cell containing the author of the notebook."""
 
     def test_does_not_fail_with_empty_notebook(self):
