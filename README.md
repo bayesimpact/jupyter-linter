@@ -10,6 +10,7 @@ python jupyter_linter /path/to/folder/with/notebooks
 
 ## Testing
 
+
 Simply run `pytest` in the repo root folder.
 
 
@@ -17,4 +18,3 @@ Simply run `pytest` in the repo root folder.
 
 TODO: Improve README by adding motivation for the project and better usage instructions.
 TODO: Package for easy distribution via Pypi and add instructions of how to publish to Pypi.
-TODO: Run tests and linter on CircleCI.
