@@ -1,4 +1,12 @@
+"""
+A linter to help enforce the Bayes Impact Notebook Style Guide.
 
+## Usage
+
+```sh
+python jupyter_linter /path/to/folder/with/notebooks
+```
+"""
 import os
 import argparse
 import collections
@@ -8,8 +16,10 @@ import sys
 import fnmatch
 
 NotebookError = collections.namedtuple('NotebookError', ['filename', 'msg'])
+IMPORT_REGEX = re.compile('^(import|from .* import)')
 
 
+# TODO: Add option to make it parse only one notebook, or maybe a glob pattern.
 def main():
     parser = argparse.ArgumentParser(description='A linter for Jupyter Notebooks')
     parser.add_argument('folder', help='The folder containing Jupyter Notebooks')
@@ -22,7 +32,7 @@ def main():
     for notebook_filename in notebook_filenames:
         with open(notebook_filename) as notebook_file:
             notebook = json.load(notebook_file)
-            errors = _run_notebook_checks(notebook_filename, notebook)
+            errors = run_notebook_checks(notebook, notebook_filename)
             all_errors.append(errors)
     if all_errors:
         _print_error_report(all_errors)
@@ -44,7 +54,8 @@ def _get_notebook_filenames_in_folder(folder):
     return notebook_files
 
 
-def _run_notebook_checks(file_name, notebook):
+def run_notebook_checks(notebook, file_name=None):
+    """Check the given notebook and file_name for compliance with our style guide."""
     errors = []
     check_functions = [
         _check_import_in_first_code_cell,
@@ -55,7 +66,7 @@ def _run_notebook_checks(file_name, notebook):
         _check_clean_execution,
     ]
     for check_function in check_functions:
-        errors.extend(check_function(file_name, notebook))
+        errors.extend(check_function(notebook, file_name))
     return errors
 
 
@@ -65,14 +76,15 @@ def _print_error_report(all_errors):
         print(error)
 
 
-def _check_import_in_first_code_cell(file_name, notebook):
+def _check_import_in_first_code_cell(notebook, file_name=None):
+    """Check that all import statements are in the first code cell."""
     errors = []
     coding_cells = [
         c for c in notebook.get('cells', [])
         if c.get('cell_type') == 'code']
     for i, coding_cell in enumerate(coding_cells[1:]):
         for line in coding_cell.get('source', []):
-            if re.match('^import ', line) or re.match('^from .* import ', line):
+            if IMPORT_REGEX.match(line):
                 msg = (
                     'Imports found in coding cell %d. '
                     'Please move imports to first coding cell' % (i + 1))
@@ -80,18 +92,17 @@ def _check_import_in_first_code_cell(file_name, notebook):
     return errors
 
 
-def _check_at_least_one_cell(file_name, notebook):
+def _check_at_least_one_cell(notebook, file_name=None):
     """Check that each notebook contains at least one cell."""
-    if len(notebook.get('cells', [])) == 0:
-        msg = '%s has no cells' % file_name
-        return [NotebookError(file_name, msg)]
+    if not notebook.get('cells', []):
+        return [NotebookError(file_name, 'Has no cells')]
     return []
 
 
-def _check_first_cell_contains_author(file_name, notebook):
+def _check_first_cell_contains_author(notebook, file_name=None):
     """Check that the first cell is a markdown cell with the author."""
     errors = []
-    cells = notebook.get('cells', [])
+    cells = notebook.get('cells')
     if not cells:
         return errors
     first_cell = cells[0]
@@ -101,17 +112,15 @@ def _check_first_cell_contains_author(file_name, notebook):
     if first_cell.get('cell_type') != 'markdown':
         errors.append(NotebookError(file_name, msg))
         return errors
-    author_found = False
     for line in first_cell.get('source', []):
         if line.startswith('Author: ') or line.startswith('Authors: '):
-            author_found = True
             break
-    if not author_found:
+    else:
         errors.append(NotebookError(file_name, msg))
     return errors
 
 
-def _check_python3(file_name, notebook):
+def _check_python3(notebook, file_name=None):
     """Check that the notebooks are using Python 3 kernel only."""
     kernel = notebook['metadata']['kernelspec'].get('name')
     if kernel != 'python3':
@@ -122,7 +131,7 @@ def _check_python3(file_name, notebook):
     return []
 
 
-def _check_no_spaces_in_filenames(file_name, unused_notebook):
+def _check_no_spaces_in_filenames(unused_notebook, file_name=None):
     """Check that the notebooks names use underscores, not blank spaces."""
     if ' ' in os.path.basename(file_name):
         msg = 'Use underscore in filename %s' % file_name
@@ -130,7 +139,7 @@ def _check_no_spaces_in_filenames(file_name, unused_notebook):
     return []
 
 
-def _check_clean_execution(file_name, notebook):
+def _check_clean_execution(notebook, file_name=None):
     """Check that all code cells have been executed once in the right order."""
     errors = []
     cells = notebook.get('cells', [])

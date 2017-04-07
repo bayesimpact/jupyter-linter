@@ -1,8 +1,8 @@
-
+"""Unit tests for the jupyter_linter module."""
 import jupyter_linter
 
 
-def create_cell(**kwargs):
+def _create_cell(**kwargs):
     cell = {
         "cell_type": "code",
         "execution_count": 1,
@@ -19,29 +19,29 @@ class TestFirstCellImport(object):
 
     def test_import_only_in_first_cell(self):
         notebook = {
-            'cells': [create_cell(source=['import bla from blub'])],
+            'cells': [_create_cell(source=['import bla from blub'])],
         }
-        errors = jupyter_linter._check_import_in_first_code_cell('file_name.ipynb', notebook)
-        assert(len(errors) == 0)
+        errors = jupyter_linter._check_import_in_first_code_cell(notebook)
+        assert(not errors)
 
     def test_import_only_in_first_cell_two_cells(self):
         notebook = {
             'cells': [
-                create_cell(source=['import bla from blub']),
-                create_cell(source=['print("stuff")']),
+                _create_cell(source=['import bla from blub']),
+                _create_cell(source=['print("stuff")']),
             ],
         }
-        errors = jupyter_linter._check_import_in_first_code_cell('file_name.ipynb', notebook)
-        assert(len(errors) == 0)
+        errors = jupyter_linter._check_import_in_first_code_cell(notebook)
+        assert(not errors)
 
     def test_import_in_other_than_first_cell(self):
         notebook = {
             'cells': [
-                create_cell(source=['print("stuff")']),
-                create_cell(source=['import bla from blub']),
+                _create_cell(source=['print("stuff")']),
+                _create_cell(source=['import bla from blub']),
             ],
         }
-        errors = jupyter_linter._check_import_in_first_code_cell('file_name.ipynb', notebook)
+        errors = jupyter_linter._check_import_in_first_code_cell(notebook)
         assert(len(errors) == 1)
         assert(errors[0].msg == (
             'Imports found in coding cell 1. Please move imports to first coding cell'))
@@ -54,15 +54,15 @@ class TestNotebookNotEmpty(object):
         notebook = {
             'cells': [],
         }
-        errors = jupyter_linter._check_at_least_one_cell('file_name.ipynb', notebook)
+        errors = jupyter_linter._check_at_least_one_cell(notebook)
         assert(len(errors) == 1)
 
     def test_with_one_cell(self):
         notebook = {
-            'cells': [create_cell()],
+            'cells': [_create_cell()],
         }
-        errors = jupyter_linter._check_at_least_one_cell('file_name.ipynb', notebook)
-        assert(len(errors) == 0)
+        errors = jupyter_linter._check_at_least_one_cell(notebook)
+        assert(not errors)
 
 
 class TestAuthorInFirstCell(object):
@@ -73,29 +73,29 @@ class TestAuthorInFirstCell(object):
         notebook = {
             'cells': [],
         }
-        errors = jupyter_linter._check_first_cell_contains_author('file_name.ipynb', notebook)
-        assert(len(errors) == 0)
+        errors = jupyter_linter._check_first_cell_contains_author(notebook)
+        assert(not errors)
 
     def test_first_cell_not_markdown(self):
         notebook = {
-            'cells': [create_cell(cell_type='code')],
+            'cells': [_create_cell(cell_type='code')],
         }
-        errors = jupyter_linter._check_first_cell_contains_author('file_name.ipynb', notebook)
+        errors = jupyter_linter._check_first_cell_contains_author(notebook)
         assert(len(errors) == 1)
 
     def test_first_cell_no_author(self):
         notebook = {
-            'cells': [create_cell(cell_type='markdown', source=['Bla bla bla'])],
+            'cells': [_create_cell(cell_type='markdown', source=['Bla bla bla'])],
         }
-        errors = jupyter_linter._check_first_cell_contains_author('file_name.ipynb', notebook)
+        errors = jupyter_linter._check_first_cell_contains_author(notebook)
         assert(len(errors) == 1)
 
     def test_first_cell_contains_author(self):
         notebook = {
-            'cells': [create_cell(cell_type='markdown', source=['Author: Stephan'])],
+            'cells': [_create_cell(cell_type='markdown', source=['Author: Stephan'])],
         }
-        errors = jupyter_linter._check_first_cell_contains_author('file_name.ipynb', notebook)
-        assert(len(errors) == 0)
+        errors = jupyter_linter._check_first_cell_contains_author(notebook)
+        assert(not errors)
 
 
 class TestKernelVersion(object):
@@ -111,7 +111,7 @@ class TestKernelVersion(object):
                 },
             },
         }
-        errors = jupyter_linter._check_python3('file_name.ipynb', notebook)
+        errors = jupyter_linter._check_python3(notebook)
         assert(len(errors) == 1)
 
     def test_python3_kernel(self):
@@ -124,20 +124,20 @@ class TestKernelVersion(object):
                 },
             },
         }
-        errors = jupyter_linter._check_python3('file_name.ipynb', notebook)
-        assert(len(errors) == 0)
+        errors = jupyter_linter._check_python3(notebook)
+        assert(not errors)
 
 
 class TestFilename(object):
     """Notebooks should use underscores in filenames instead of spaces."""
 
     def test_whitespace_in_filename(self):
-        errors = jupyter_linter._check_no_spaces_in_filenames('file name.ipynb', {})
+        errors = jupyter_linter._check_no_spaces_in_filenames({}, 'file name.ipynb')
         assert(len(errors) == 1)
 
     def test_snake_case_filename(self):
-        errors = jupyter_linter._check_no_spaces_in_filenames('file_name.ipynb', {})
-        assert(len(errors) == 0)
+        errors = jupyter_linter._check_no_spaces_in_filenames({}, 'file_name.ipynb')
+        assert(not errors)
 
 
 class TestCleanExecution(object):
@@ -145,24 +145,24 @@ class TestCleanExecution(object):
 
     def test_no_empty_code_cells(self):
         notebook = {
-            'cells': [create_cell(cell_type='code', source=[])]
+            'cells': [_create_cell(cell_type='code', source=[])]
         }
-        errors = jupyter_linter._check_clean_execution('file name.ipynb', notebook)
+        errors = jupyter_linter._check_clean_execution(notebook)
         assert(len(errors) == 1)
 
     def test_cells_not_executed_in_order(self):
         notebook = {
-            'cells': [create_cell(cell_type='code', execution_count=2, source=['stuff'])]
+            'cells': [_create_cell(cell_type='code', execution_count=2, source=['stuff'])]
         }
-        errors = jupyter_linter._check_clean_execution('file name.ipynb', notebook)
+        errors = jupyter_linter._check_clean_execution(notebook)
         assert(len(errors) == 1)
 
     def test_cells_executed_in_order(self):
         notebook = {
             'cells': [
-                create_cell(cell_type='code', execution_count=1, source=['stuff']),
-                create_cell(cell_type='code', execution_count=2, source=['other stuff']),
+                _create_cell(cell_type='code', execution_count=1, source=['stuff']),
+                _create_cell(cell_type='code', execution_count=2, source=['other stuff']),
             ]
         }
-        errors = jupyter_linter._check_clean_execution('file name.ipynb', notebook)
-        assert(len(errors) == 0)
+        errors = jupyter_linter._check_clean_execution(notebook)
+        assert(not errors)
